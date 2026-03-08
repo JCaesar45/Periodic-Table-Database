@@ -1,0 +1,1084 @@
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Periodic Table Database Explorer</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;600;700&family=Inter:wght@300;400;600&display=swap');
+
+    :root {
+      --alkali: #ff6b6b;
+      --alkaline: #f9ca24;
+      --transition: #f0932b;
+      --post-transition: #eb4d4b;
+      --metalloid: #6c5ce7;
+      --nonmetal: #00b894;
+      --halogen: #0984e3;
+      --noble: #fd79a8;
+      --lanthanide: #a29bfe;
+      --actinide: #fdcb6e;
+      --unknown: #636e72;
+      --bg-dark: #0a0e27;
+      --bg-card: #151932;
+      --bg-hover: #1e2746;
+      --text-primary: #ffffff;
+      --text-secondary: #a0a0a0;
+      --accent: #00d2ff;
+      --border: rgba(255, 255, 255, 0.1);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-dark);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .quantum-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.4;
+    }
+
+    .particle {
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      background: var(--accent);
+      border-radius: 50%;
+      animation: float 20s infinite linear;
+      box-shadow: 0 0 10px var(--accent);
+    }
+
+    @keyframes float {
+
+      0%,
+      100% {
+        transform: translateY(100vh) rotate(0deg);
+        opacity: 0;
+      }
+
+      10% {
+        opacity: 1;
+      }
+
+      90% {
+        opacity: 1;
+      }
+
+      100% {
+        transform: translateY(-100vh) rotate(720deg);
+        opacity: 0;
+      }
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 3rem;
+      position: relative;
+    }
+
+    h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 3.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent) 0%, #ff00ff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.5rem;
+      letter-spacing: -2px;
+    }
+
+    .subtitle {
+      color: var(--text-secondary);
+      font-size: 1.1rem;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .controls {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .search-box {
+      position: relative;
+      flex: 1;
+      max-width: 400px;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 1rem 1.5rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      color: var(--text-primary);
+      font-size: 1rem;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+
+    .search-box input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 20px rgba(0, 210, 255, 0.2);
+    }
+
+    .btn {
+      padding: 1rem 2rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-size: 0.85rem;
+    }
+
+    .btn:hover {
+      background: var(--accent);
+      color: var(--bg-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(0, 210, 255, 0.3);
+    }
+
+    .legend {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 2rem;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--bg-card);
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 0.85rem;
+    }
+
+    .legend-item:hover {
+      transform: scale(1.05);
+      border-color: var(--accent);
+    }
+
+    .legend-color {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .table-wrapper {
+      display: grid;
+      grid-template-columns: repeat(18, 1fr);
+      gap: 4px;
+      max-width: 1400px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    .element {
+      aspect-ratio: 1;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.5rem;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 80px;
+    }
+
+    .element::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.05) 100%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .element:hover::before {
+      opacity: 1;
+    }
+
+    .element:hover {
+      transform: scale(1.15);
+      z-index: 10;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+      border-color: var(--accent);
+    }
+
+    .element-number {
+      font-size: 0.7rem;
+      opacity: 0.6;
+      font-weight: 600;
+    }
+
+    .element-symbol {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.4rem;
+      font-weight: 700;
+      text-align: center;
+      margin: auto;
+    }
+
+    .element-name {
+      font-size: 0.65rem;
+      text-align: center;
+      opacity: 0.8;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .element-mass {
+      font-size: 0.6rem;
+      text-align: center;
+      opacity: 0.5;
+    }
+
+    .empty {
+      background: transparent;
+      border: none;
+      pointer-events: none;
+    }
+
+    .alkali {
+      border-left: 3px solid var(--alkali);
+    }
+
+    .alkaline {
+      border-left: 3px solid var(--alkaline);
+    }
+
+    .transition {
+      border-left: 3px solid var(--transition);
+    }
+
+    .post-transition {
+      border-left: 3px solid var(--post-transition);
+    }
+
+    .metalloid {
+      border-left: 3px solid var(--metalloid);
+    }
+
+    .nonmetal {
+      border-left: 3px solid var(--nonmetal);
+    }
+
+    .halogen {
+      border-left: 3px solid var(--halogen);
+    }
+
+    .noble {
+      border-left: 3px solid var(--noble);
+    }
+
+    .lanthanide {
+      border-left: 3px solid var(--lanthanide);
+    }
+
+    .actinide {
+      border-left: 3px solid var(--actinide);
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(10, 14, 39, 0.95);
+      backdrop-filter: blur(10px);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+      padding: 2rem;
+    }
+
+    .modal.active {
+      display: flex;
+      animation: modalIn 0.3s ease;
+    }
+
+    @keyframes modalIn {
+      from {
+        opacity: 0;
+        transform: scale(0.9);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .modal-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      max-width: 800px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      position: relative;
+      box-shadow: 0 50px 100px rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-header {
+      padding: 2rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 2.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .modal-symbol {
+      width: 80px;
+      height: 80px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+      font-weight: 700;
+      background: var(--bg-dark);
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 2rem;
+      cursor: pointer;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+    }
+
+    .close-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-primary);
+      transform: rotate(90deg);
+    }
+
+    .modal-body {
+      padding: 2rem;
+    }
+
+    .properties-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .property-card {
+      background: var(--bg-dark);
+      padding: 1.5rem;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      transition: all 0.3s ease;
+    }
+
+    .property-card:hover {
+      transform: translateY(-5px);
+      border-color: var(--accent);
+    }
+
+    .property-label {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 0.5rem;
+    }
+
+    .property-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+
+    .electron-shells {
+      margin-top: 2rem;
+    }
+
+    .shell {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      padding: 1rem;
+      background: var(--bg-dark);
+      border-radius: 8px;
+    }
+
+    .shell-number {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.85rem;
+    }
+
+    .electrons {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .electron {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #fff, var(--accent));
+      box-shadow: 0 0 10px var(--accent);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+
+      50% {
+        transform: scale(0.8);
+        opacity: 0.7;
+      }
+    }
+
+    .terminal {
+      background: #000;
+      border-radius: 12px;
+      padding: 1.5rem;
+      font-family: 'Courier New', monospace;
+      margin-top: 2rem;
+      border: 1px solid #333;
+    }
+
+    .terminal-header {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .terminal-btn {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .terminal-btn.red {
+      background: #ff5f56;
+    }
+
+    .terminal-btn.yellow {
+      background: #ffbd2e;
+    }
+
+    .terminal-btn.green {
+      background: #27c93f;
+    }
+
+    .terminal-body {
+      color: #0f0;
+      line-height: 1.6;
+    }
+
+    .terminal-prompt {
+      color: #0f0;
+    }
+
+    .terminal-command {
+      color: #fff;
+    }
+
+    .terminal-output {
+      color: #aaa;
+      margin-top: 0.5rem;
+    }
+
+    @media (max-width: 1200px) {
+      .table-wrapper {
+        transform: scale(0.8);
+        transform-origin: top center;
+      }
+    }
+
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 2rem;
+      }
+
+      .table-wrapper {
+        transform: scale(0.6);
+        gap: 2px;
+      }
+
+      .element {
+        min-height: 60px;
+      }
+    }
+
+    .fade-in {
+      animation: fadeIn 0.5s ease forwards;
+      opacity: 0;
+    }
+
+    @keyframes fadeIn {
+      to {
+        opacity: 1;
+      }
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .loading {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--bg-dark);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      transition: opacity 0.5s ease;
+    }
+
+    .loading.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .spinner {
+      width: 60px;
+      height: 60px;
+      border: 3px solid transparent;
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .loading-text {
+      margin-top: 1rem;
+      font-family: 'Space Grotesk', sans-serif;
+      letter-spacing: 2px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <div class="loading-text">INITIALIZING DATABASE...</div>
+  </div>
+
+  <div class="quantum-bg" id="quantumBg"></div>
+
+  <div class="container">
+    <header>
+      <h1>Periodic Table Database</h1>
+      <p class="subtitle">Interactive elemental exploration with real-time SQL integration</p>
+    </header>
+
+    <div class="controls">
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Search by name, symbol, or atomic number...">
+      </div>
+      <button class="btn" onclick="resetView()">Reset View</button>
+      <button class="btn" onclick="showTerminal()">Terminal</button>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item" onclick="filterByType('alkali')">
+        <div class="legend-color" style="background: var(--alkali)"></div>
+        <span>Alkali Metals</span>
+      </div>
+      <div class="legend-item" onclick="filterByType('alkaline')">
+        <div class="legend-color" style="background: var(--alkaline)"></div>
+        <span>Alkaline Earth</span>
+      </div>
+      <div class="legend-item" onclick="filterByType('transition')">
+        <div class="legend-color" style="background: var(--transition)"></div>
+        <span>Transition Metals</span>
+      </div>
+      <div class="legend-item" onclick="filterByType('metalloid')">
+        <div class="legend-color" style="background: var(--metalloid)"></div>
+        <span>Metalloids</span>
+      </div>
+      <div class="legend-item" onclick="filterByType('nonmetal')">
+        <div class="legend-color" style="background: var(--nonmetal)"></div>
+        <span>Nonmetals</span>
+      </div>
+      <div class="legend-item" onclick="filterByType('halogen')">
+        <div class="legend-color" style="background: var(--halogen)"></div>
+        <span>Halogens</span>
+      </div>
+      <div class="legend-item" onclick="filterByType('noble')">
+        <div class="legend-color" style="background: var(--noble)"></div>
+        <span>Noble Gases</span>
+      </div>
+    </div>
+
+    <div class="table-wrapper" id="periodicTable"></div>
+  </div>
+
+  <div class="modal" id="elementModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">
+          <div class="modal-symbol" id="modalSymbol">H</div>
+          <div>
+            <div id="modalName">Hydrogen</div>
+            <small id="modalCategory" style="color: var(--text-secondary); font-size: 1rem;">Nonmetal</small>
+          </div>
+        </div>
+        <button class="close-btn" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="properties-grid" id="propertiesGrid"></div>
+        <div class="electron-shells" id="electronShells"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="terminalModal">
+    <div class="modal-content" style="max-width: 600px;">
+      <div class="modal-header">
+        <div class="modal-title" style="font-size: 1.5rem;">PostgreSQL Terminal</div>
+        <button class="close-btn" onclick="closeTerminal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="terminal">
+          <div class="terminal-header">
+            <div class="terminal-btn red"></div>
+            <div class="terminal-btn yellow"></div>
+            <div class="terminal-btn green"></div>
+          </div>
+          <div class="terminal-body" id="terminalBody">
+            <div class="terminal-prompt">freecodecamp@periodic_table:~$ <span class="terminal-command">psql --username=freecodecamp --dbname=periodic_table</span></div>
+            <div class="terminal-output">psql (12.9)<br>Type "help" for help.<br><br>periodic_table=> <span id="cursor" style="animation: blink 1s infinite;">_</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const elements = [{
+        number: 1,
+        symbol: 'H',
+        name: 'Hydrogen',
+        mass: '1.008',
+        type: 'nonmetal',
+        col: 1,
+        row: 1,
+        config: '1s1',
+        shells: [1],
+        melting: -259.1,
+        boiling: -252.9
+      },
+      {
+        number: 2,
+        symbol: 'He',
+        name: 'Helium',
+        mass: '4.0026',
+        type: 'noble',
+        col: 18,
+        row: 1,
+        config: '1s2',
+        shells: [2],
+        melting: -272.2,
+        boiling: -268.9
+      },
+      {
+        number: 3,
+        symbol: 'Li',
+        name: 'Lithium',
+        mass: '6.94',
+        type: 'alkali',
+        col: 1,
+        row: 2,
+        config: '[He] 2s1',
+        shells: [2, 1],
+        melting: 180.54,
+        boiling: 1342
+      },
+      {
+        number: 4,
+        symbol: 'Be',
+        name: 'Beryllium',
+        mass: '9.0122',
+        type: 'alkaline',
+        col: 2,
+        row: 2,
+        config: '[He] 2s2',
+        shells: [2, 2],
+        melting: 1287,
+        boiling: 2470
+      },
+      {
+        number: 5,
+        symbol: 'B',
+        name: 'Boron',
+        mass: '10.81',
+        type: 'metalloid',
+        col: 13,
+        row: 2,
+        config: '[He] 2s2 2p1',
+        shells: [2, 3],
+        melting: 2075,
+        boiling: 4000
+      },
+      {
+        number: 6,
+        symbol: 'C',
+        name: 'Carbon',
+        mass: '12.011',
+        type: 'nonmetal',
+        col: 14,
+        row: 2,
+        config: '[He] 2s2 2p2',
+        shells: [2, 4],
+        melting: 3550,
+        boiling: 4027
+      },
+      {
+        number: 7,
+        symbol: 'N',
+        name: 'Nitrogen',
+        mass: '14.007',
+        type: 'nonmetal',
+        col: 15,
+        row: 2,
+        config: '[He] 2s2 2p3',
+        shells: [2, 5],
+        melting: -210.1,
+        boiling: -195.8
+      },
+      {
+        number: 8,
+        symbol: 'O',
+        name: 'Oxygen',
+        mass: '15.999',
+        type: 'nonmetal',
+        col: 16,
+        row: 2,
+        config: '[He] 2s2 2p4',
+        shells: [2, 6],
+        melting: -218,
+        boiling: -183
+      },
+      {
+        number: 9,
+        symbol: 'F',
+        name: 'Fluorine',
+        mass: '18.998',
+        type: 'halogen',
+        col: 17,
+        row: 2,
+        config: '[He] 2s2 2p5',
+        shells: [2, 7],
+        melting: -220,
+        boiling: -188.1
+      },
+      {
+        number: 10,
+        symbol: 'Ne',
+        name: 'Neon',
+        mass: '20.18',
+        type: 'noble',
+        col: 18,
+        row: 2,
+        config: '[He] 2s2 2p6',
+        shells: [2, 8],
+        melting: -248.6,
+        boiling: -246.1
+      }
+    ];
+    let currentFilter = 'all';
+
+    function init() {
+      createParticles();
+      renderTable();
+      setTimeout(() => {
+        document.getElementById('loading').classList.add('hidden');
+      }, 1500);
+    }
+
+    function createParticles() {
+      const container = document.getElementById('quantumBg');
+      for (let i = 0; i < 50; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.left = Math.random() * 100 + '%';
+        particle.style.animationDelay = Math.random() * 20 + 's';
+        particle.style.animationDuration = (15 + Math.random() * 10) + 's';
+        container.appendChild(particle);
+      }
+    }
+
+    function renderTable() {
+      const table = document.getElementById('periodicTable');
+      table.innerHTML = '';
+      for (let row = 1; row <= 7; row++) {
+        for (let col = 1; col <= 18; col++) {
+          const element = elements.find(e => e.row === row && e.col === col);
+          if (element) {
+            const el = createElementCard(element);
+            table.appendChild(el);
+          } else {
+            const empty = document.createElement('div');
+            empty.className = 'empty';
+            table.appendChild(empty);
+          }
+        }
+      }
+    }
+
+    function createElementCard(element) {
+      const div = document.createElement('div');
+      div.className = `element ${element.type} fade-in`;
+      div.style.animationDelay = (element.number * 0.05) + 's';
+      div.innerHTML = `
+                <div class="element-number">${element.number}</div>
+                <div class="element-symbol">${element.symbol}</div>
+                <div class="element-name">${element.name}</div>
+                <div class="element-mass">${element.mass}</div>
+            `;
+      div.onclick = () => showElementDetails(element);
+      div.dataset.type = element.type;
+      div.dataset.name = element.name.toLowerCase();
+      div.dataset.symbol = element.symbol.toLowerCase();
+      div.dataset.number = element.number;
+      return div;
+    }
+
+    function showElementDetails(element) {
+      const modal = document.getElementById('elementModal');
+      document.getElementById('modalSymbol').textContent = element.symbol;
+      document.getElementById('modalSymbol').style.borderLeft = `4px solid var(--${element.type})`;
+      document.getElementById('modalName').textContent = element.name;
+      document.getElementById('modalCategory').textContent = element.type.charAt(0).toUpperCase() + element.type.slice(1);
+      const props = document.getElementById('propertiesGrid');
+      props.innerHTML = `
+                <div class="property-card">
+                    <div class="property-label">Atomic Number</div>
+                    <div class="property-value">${element.number}</div>
+                </div>
+                <div class="property-card">
+                    <div class="property-label">Atomic Mass</div>
+                    <div class="property-value">${element.mass}</div>
+                </div>
+                <div class="property-card">
+                    <div class="property-label">Electron Config</div>
+                    <div class="property-value" style="font-size: 1rem;">${element.config}</div>
+                </div>
+                <div class="property-card">
+                    <div class="property-label">Melting Point</div>
+                    <div class="property-value">${element.melting}°C</div>
+                </div>
+                <div class="property-card">
+                    <div class="property-label">Boiling Point</div>
+                    <div class="property-value">${element.boiling}°C</div>
+                </div>
+                <div class="property-card">
+                    <div class="property-label">Category</div>
+                    <div class="property-value" style="text-transform: capitalize;">${element.type}</div>
+                </div>
+            `;
+      const shells = document.getElementById('electronShells');
+      shells.innerHTML = '<h3 style="margin-bottom: 1rem; font-family: Space Grotesk;">Electron Shells</h3>';
+      element.shells.forEach((count, index) => {
+        const shell = document.createElement('div');
+        shell.className = 'shell';
+        shell.innerHTML = `
+                    <div class="shell-number">${index + 1}</div>
+                    <div class="electrons">
+                        ${Array(count).fill(0).map(() => '<div class="electron"></div>').join('')}
+                    </div>
+                    <span style="color: var(--text-secondary); margin-left: auto;">${count} electrons</span>
+                `;
+        shells.appendChild(shell);
+      });
+      modal.classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('elementModal').classList.remove('active');
+    }
+
+    function filterByType(type) {
+      const allElements = document.querySelectorAll('.element');
+      allElements.forEach(el => {
+        if (type === 'all' || el.dataset.type === type) {
+          el.style.opacity = '1';
+          el.style.transform = 'scale(1)';
+        } else {
+          el.style.opacity = '0.2';
+          el.style.transform = 'scale(0.9)';
+        }
+      });
+    }
+
+    function resetView() {
+      document.getElementById('searchInput').value = '';
+      const allElements = document.querySelectorAll('.element');
+      allElements.forEach(el => {
+        el.style.opacity = '1';
+        el.style.transform = 'scale(1)';
+        el.classList.remove('hidden');
+      });
+    }
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+      const query = e.target.value.toLowerCase();
+      const allElements = document.querySelectorAll('.element');
+      allElements.forEach(el => {
+        const name = el.dataset.name;
+        const symbol = el.dataset.symbol;
+        const number = el.dataset.number;
+        if (name.includes(query) || symbol.includes(query) || number.includes(query)) {
+          el.classList.remove('hidden');
+          el.style.opacity = '1';
+        } else {
+          el.classList.add('hidden');
+        }
+      });
+    });
+
+    function showTerminal() {
+      document.getElementById('terminalModal').classList.add('active');
+      simulateTerminal();
+    }
+
+    function closeTerminal() {
+      document.getElementById('terminalModal').classList.remove('active');
+    }
+
+    function simulateTerminal() {
+      const body = document.getElementById('terminalBody');
+      const commands = [{
+          cmd: '\\dt',
+          output: 'List of relations<br>Schema | Name | Type | Owner<br>--------+------------+-------+------------<br>public | elements | table | freecodecamp<br>public | properties | table | freecodecamp<br>public | types | table | freecodecamp'
+        },
+        {
+          cmd: 'SELECT * FROM elements LIMIT 5;',
+          output: 'atomic_number | symbol | name<br>----------------+--------+----------<br>1 | H | Hydrogen<br>2 | He | Helium<br>3 | Li | Lithium<br>4 | Be | Beryllium<br>5 | B | Boron'
+        },
+        {
+          cmd: 'SELECT e.name, p.atomic_mass, t.type FROM elements e INNER JOIN properties p ON e.atomic_number = p.atomic_number INNER JOIN types t ON p.type_id = t.type_id WHERE e.atomic_number = 1;',
+          output: 'name | atomic_mass | type<br>----------+-------------+----------<br>Hydrogen | 1.008 | nonmetal'
+        }
+      ];
+      let i = 0;
+      const interval = setInterval(() => {
+        if (i >= commands.length) {
+          clearInterval(interval);
+          return;
+        }
+        const cmd = commands[i];
+        const line = document.createElement('div');
+        line.style.marginTop = '1rem';
+        line.innerHTML = `<span class="terminal-prompt">periodic_table=> </span><span class="terminal-command">${cmd.cmd}</span>`;
+        body.appendChild(line);
+        setTimeout(() => {
+          const output = document.createElement('div');
+          output.className = 'terminal-output';
+          output.innerHTML = cmd.output;
+          body.appendChild(output);
+          body.scrollTop = body.scrollHeight;
+        }, 500);
+        i++;
+      }, 2000);
+    }
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeModal();
+        closeTerminal();
+      }
+    });
+    window.onclick = (e) => {
+      if (e.target.classList.contains('modal')) {
+        e.target.classList.remove('active');
+      }
+    };
+    window.onload = init;
+  </script>
+</body>
+
+</html>
