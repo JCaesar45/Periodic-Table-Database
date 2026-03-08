@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 12.9 (Ubuntu 12.9-2.pgdg20.04+1)
--- Dumped by pg_dump version 12.9 (Ubuntu 12.9-2.pgdg20.04+1)
+-- Dumped from database version 12.22 (Ubuntu 12.22-0ubuntu0.20.04.4)
+-- Dumped by pg_dump version 12.22 (Ubuntu 12.22-0ubuntu0.20.04.4)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -18,13 +18,13 @@ SET row_security = off;
 
 DROP DATABASE periodic_table;
 --
--- Name: periodic_table; Type: DATABASE; Schema: -; Owner: freecodecamp
+-- Name: periodic_table; Type: DATABASE; Schema: -; Owner: postgres
 --
 
 CREATE DATABASE periodic_table WITH TEMPLATE = template0 ENCODING = 'UTF8' LC_COLLATE = 'C.UTF-8' LC_CTYPE = 'C.UTF-8';
 
 
-ALTER DATABASE periodic_table OWNER TO freecodecamp;
+ALTER DATABASE periodic_table OWNER TO postgres;
 
 \connect periodic_table
 
@@ -62,7 +62,7 @@ ALTER TABLE public.elements OWNER TO freecodecamp;
 
 CREATE TABLE public.properties (
     atomic_number integer NOT NULL,
-    atomic_mass numeric NOT NULL,
+    atomic_mass real NOT NULL,
     melting_point_celsius numeric NOT NULL,
     boiling_point_celsius numeric NOT NULL,
     type_id integer NOT NULL
@@ -104,11 +104,11 @@ INSERT INTO public.elements VALUES (10, 'Ne', 'Neon');
 --
 
 INSERT INTO public.properties VALUES (1, 1.008, -259.1, -252.9, 1);
-INSERT INTO public.properties VALUES (2, 4.0026, -272.2, -268.9, 1);
+INSERT INTO public.properties VALUES (2, 4.0026, -272.2, -269, 1);
 INSERT INTO public.properties VALUES (3, 6.94, 180.54, 1342, 2);
 INSERT INTO public.properties VALUES (4, 9.0122, 1287, 2470, 2);
 INSERT INTO public.properties VALUES (5, 10.81, 2075, 4000, 3);
-INSERT INTO public.properties VALUES (6, 12.011, 3550, 4027, 3);
+INSERT INTO public.properties VALUES (6, 12.011, 3550, 4027, 1);
 INSERT INTO public.properties VALUES (7, 14.007, -210.1, -195.8, 1);
 INSERT INTO public.properties VALUES (8, 15.999, -218, -183, 1);
 INSERT INTO public.properties VALUES (9, 18.998, -220, -188.1, 1);
@@ -122,6 +122,22 @@ INSERT INTO public.properties VALUES (10, 20.18, -248.6, -246.1, 1);
 INSERT INTO public.types VALUES (1, 'nonmetal');
 INSERT INTO public.types VALUES (2, 'metal');
 INSERT INTO public.types VALUES (3, 'metalloid');
+
+
+--
+-- Name: elements elements_atomic_number_key; Type: CONSTRAINT; Schema: public; Owner: freecodecamp
+--
+
+ALTER TABLE ONLY public.elements
+    ADD CONSTRAINT elements_atomic_number_key UNIQUE (atomic_number);
+
+
+--
+-- Name: elements elements_name_key; Type: CONSTRAINT; Schema: public; Owner: freecodecamp
+--
+
+ALTER TABLE ONLY public.elements
+    ADD CONSTRAINT elements_name_key UNIQUE (name);
 
 
 --
@@ -141,11 +157,11 @@ ALTER TABLE ONLY public.elements
 
 
 --
--- Name: elements elements_name_key; Type: CONSTRAINT; Schema: public; Owner: freecodecamp
+-- Name: properties properties_atomic_number_key; Type: CONSTRAINT; Schema: public; Owner: freecodecamp
 --
 
-ALTER TABLE ONLY public.elements
-    ADD CONSTRAINT elements_name_key UNIQUE (name);
+ALTER TABLE ONLY public.properties
+    ADD CONSTRAINT properties_atomic_number_key UNIQUE (atomic_number);
 
 
 --
@@ -183,3 +199,4 @@ ALTER TABLE ONLY public.properties
 --
 -- PostgreSQL database dump complete
 --
+
